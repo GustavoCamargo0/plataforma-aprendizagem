@@ -2,7 +2,7 @@ import { useState } from "react";
 import api from "../data/api.js";
 import { useNavigate, Link } from "react-router-dom";
 
-export default function Entrada() {
+export default function Login() {
   const navigate = useNavigate();
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -11,15 +11,15 @@ export default function Entrada() {
     e.preventDefault();
 
     try {
-      if (nome.trim() === "" || email.trim() === "") {
+      if ( email.trim() === "") {
         alert("Por favor, preencha todos os campos.");
         return;
       }
 
-      await api.post("/usuarios", {
-        nome,
+       await api.post("/usuarios/login", {
         email,
       });
+
 
       setNome("");
       setEmail("");
@@ -32,15 +32,9 @@ export default function Entrada() {
 
   return (
     <>
-      <h1>Entrada</h1>
+      <h1>Login</h1>
 
       <form onSubmit={aoEnviar}>
-        <input
-          type="text"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-          placeholder="Nome"
-        />
         <input
           type="email"
           value={email}
@@ -49,7 +43,7 @@ export default function Entrada() {
         />
         <button type="submit">Cadastrar</button>
       </form>
-      <Link to={'/login'}>Já tem conta?</Link>
+      <Link to={"/"}>Ainda não tem conta?</Link>
     </>
   );
 }
