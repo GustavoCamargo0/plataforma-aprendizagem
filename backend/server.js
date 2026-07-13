@@ -159,10 +159,8 @@ app.post("/usuarios/login", async (req, res) => {
   }
 
   try {
-    const result = await pool.query(
-      "SELECT * FROM usuarios WHERE email = $1",
-      [email]
-    );
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", 
+      [email]);
 
     if (result.rows.length === 0) {
       return res.status(401).json({
@@ -180,7 +178,6 @@ app.post("/usuarios/login", async (req, res) => {
         email: usuario.email,
       },
     });
-
   } catch (err) {
     console.error(err);
     res.status(500).json({
@@ -191,9 +188,9 @@ app.post("/usuarios/login", async (req, res) => {
 app.post("/trilhas", async (req, res) => {
   const { usuarioId, cursoId, respostas } = req.body;
 
-  if (!cursoId || !respostas) {
+  if (!usuarioId || !cursoId || !respostas) {
     return res.status(400).json({
-      error: "cursoId e respostas são obrigatórios",
+      error: "usuarioId, cursoId e respostas são obrigatórios",
     });
   }
 
@@ -228,7 +225,14 @@ app.post("/trilhas", async (req, res) => {
       }
     }
 
-     for (const topico of trilha) {
+    await pool.query(
+      `DELETE FROM trilhas
+   WHERE usuario_id = $1
+   AND curso_id = $2`,
+      [usuarioId, cursoId],
+    );
+
+    for (const topico of trilha) {
       await pool.query(
         `INSERT INTO trilhas
     (usuario_id, curso_id, titulo, conteudo_ensino, pergunta, dificuldade, duracao_minutos)
@@ -251,6 +255,118 @@ app.post("/trilhas", async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/trilhas/:usuarioId", async (req, res) => {
+  const { usuarioId } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+      SELECT
+        id,
+        curso_id,
+        titulo AS title,
+        conteudo_ensino,
+        pergunta,
+        dificuldade,
+        duracao_minutos
+      FROM trilhas
+      WHERE usuario_id = $1
+      ORDER BY id
+      `,
+      [usuarioId],
+    );
+
+    res.json(resultado.rows);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/respostas", async (req, res) => {
+  const { usuarioId, trilhaId, resposta } = req.body;
+
+  try {
+    await pool.query(
+      `
+      INSERT INTO respostas (usuario_id, trilha_id, resposta)
+      VALUES ($1,$2,$3)
+      ON CONFLICT (usuario_id, trilha_id)
+      DO UPDATE
+      SET resposta = EXCLUDED.resposta,
+          atualizado_em = CURRENT_TIMESTAMP
+      `,
+      [usuarioId, trilhaId, resposta]
+    );
+
+    res.json({ sucesso: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/respostas/:usuarioId/:trilhaId", async (req, res) => {
+  const { usuarioId, trilhaId } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+      SELECT resposta
+      FROM respostas
+      WHERE usuario_id = $1
+      AND trilha_id = $2
+      `,
+      [usuarioId, trilhaId]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.json({ resposta: "" });
+    }
+
+    res.json(resultado.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/topicos/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+      SELECT
+        id,
+        curso_id,
+        titulo AS title,
+        conteudo_ensino,
+        pergunta,
+        dificuldade,
+        duracao_minutos
+      FROM trilhas
+      WHERE id = $1
+      `,
+      [id]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        error: "Tópico não encontrado"
+      });
+    }
+
+    res.json(resultado.rows[0]);
+
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: error.message
+    });
   }
 });
 

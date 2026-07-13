@@ -1,95 +1,142 @@
-
 import { useEffect, useState } from "react";
-import { Link, useLocation, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import api from "../data/api";
 
 export default function Topico() {
   const { id } = useParams();
-  const location = useLocation();
-  const topico = location.state?.topico;
-  const trilha = location.state?.trilha || [];
-  const cursoId = location.state?.cursoId || sessionStorage.getItem("cursoId") || "matematica";
 
+  const [topico, setTopico] = useState(null);
   const [resposta, setResposta] = useState("");
   const [mensagem, setMensagem] = useState("");
 
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+
   useEffect(() => {
-    if (!topico) {
-      return;
+    async function carregarTopico() {
+      try {
+        const response = await api.get(`/topicos/${id}`);
+
+        setTopico(response.data);
+
+      } catch (error) {
+        console.error("Erro ao carregar tópico:", error);
+      }
     }
 
-    const respostaSalva =
-      sessionStorage.getItem(`topico-${id}-resposta`) || topico.resposta || "";
+    carregarTopico();
 
-    setResposta(respostaSalva);
-    setMensagem(respostaSalva ? "Resposta salva." : "");
-  }, [id, topico]);
+  }, [id]);
 
-  function handleSubmit(event) {
+
+  useEffect(() => {
+    async function carregarResposta() {
+
+      if (!usuario || !id) return;
+
+      try {
+        const response = await api.get(
+          `/respostas/${usuario.id}/${id}`
+        );
+
+        setResposta(response.data.resposta || "");
+
+      } catch (error) {
+        console.error("Erro ao buscar resposta:", error);
+      }
+    }
+
+    carregarResposta();
+
+  }, [id]);
+
+
+  async function handleSubmit(event) {
     event.preventDefault();
 
-    if (!topico) {
-      return;
+    try {
+
+      await api.post("/respostas", {
+        usuarioId: usuario.id,
+        trilhaId: id,
+        resposta,
+      });
+
+
+      setMensagem("Resposta salva com sucesso!");
+
+    } catch (error) {
+
+      console.error("Erro ao salvar resposta:", error);
+      setMensagem("Erro ao salvar resposta.");
+
     }
-
-    sessionStorage.setItem(`topico-${id}-resposta`, resposta);
-
-    const trilhaAtualizada = trilha.map((item, index) =>
-      Number(index) === Number(id) ? { ...item, resposta } : item,
-    );
-
-    if (trilhaAtualizada.length) {
-      sessionStorage.setItem("trilha", JSON.stringify(trilhaAtualizada));
-    }
-
-    setMensagem("Resposta salva com sucesso!");
   }
 
-  const trilhaParaVoltar = trilha.map((item, index) =>
-    Number(index) === Number(id) ? { ...item, resposta } : item,
-  );
+
+  if (!topico) {
+    return <p>Carregando tópico...</p>;
+  }
+
 
   return (
     <>
-      <h1>{topico?.title || `Tópico ${id}`}</h1>
-      <p>{topico?.conteudo_ensino || "Conteúdo não disponível no momento."}</p>
-
-      {topico?.pergunta ? (
-        <p>
-          <strong>Pergunta:</strong> {topico.pergunta}
-        </p>
-      ) : null}
+      <h1>{topico.title}</h1>
 
       <p>
-        <strong>Dificuldade:</strong> {topico?.dificuldade || "-"}
-      </p>
-      <p>
-        <strong>Duração:</strong> {topico?.duracao_minutos || "-"} min
+        {topico.conteudo_ensino}
       </p>
 
-      <form onSubmit={handleSubmit} style={{ marginTop: "1rem" }}>
-        <label htmlFor="resposta-topico" style={{ display: "block", marginBottom: "0.25rem" }}>
-          Responda à pergunta
+
+      <p>
+        <strong>Pergunta:</strong> {topico.pergunta}
+      </p>
+
+
+      <p>
+        <strong>Dificuldade:</strong> {topico.dificuldade}
+      </p>
+
+
+      <p>
+        <strong>Duração:</strong> {topico.duracao_minutos} min
+      </p>
+
+
+      <form onSubmit={handleSubmit}>
+
+        <label>
+          Responda à pergunta:
         </label>
+
         <textarea
-          id="resposta-topico"
           value={resposta}
-          onChange={(event) => setResposta(event.target.value)}
-          placeholder="Escreva sua resposta aqui"
-          rows={4}
-          style={{ width: "100%", maxWidth: "32rem" }}
+          onChange={(e) => setResposta(e.target.value)}
+          rows={5}
+          placeholder="Digite sua resposta..."
         />
-        <div style={{ marginTop: "0.5rem" }}>
-          <button type="submit">Salvar resposta</button>
-        </div>
+
+        <br />
+
+        <button type="submit">
+          Salvar resposta
+        </button>
+
       </form>
 
-      {mensagem ? <p style={{ color: "green" }}>{mensagem}</p> : null}
 
-      {trilha.length > 0 ? (
-        <Link to={`/trilha?curso=${cursoId}`} state={{ trilha: trilhaParaVoltar, cursoId }}>
-          Voltar para a trilha
-        </Link>
-      ) : null}
+      {mensagem && (
+        <p style={{ color: "green" }}>
+          {mensagem}
+        </p>
+      )}
+
+
+      <br />
+
+      <Link to={`/trilha?curso=${topico.curso_id}`}>
+        Voltar para trilha
+      </Link>
+
     </>
   );
 }

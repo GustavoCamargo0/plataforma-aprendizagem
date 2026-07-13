@@ -1,10 +1,14 @@
-
-import { Link, useLocation, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import api from "../data/api";
+import { Link, useSearchParams } from "react-router-dom";
 
 export default function Trilha() {
   const [searchParams] = useSearchParams();
-  const location = useLocation();
-  const cursoId = searchParams.get("curso") || location.state?.cursoId || "matematica";
+
+  const [trilha, setTrilha] = useState([]);
+  const [carregando, setCarregando] = useState(true);
+
+  const cursoId = searchParams.get("curso") || "matematica";
 
   const titulos = {
     matematica: "Matemática básica",
@@ -12,24 +16,53 @@ export default function Trilha() {
     raciocinio: "Raciocínio lógico",
   };
 
-  const trilha = location.state?.trilha || JSON.parse(sessionStorage.getItem("trilha") || "null") || [];
+  useEffect(() => {
+    async function carregarTrilha() {
+      try {
+        const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+        if (!usuario) {
+          return;
+        }
+
+        const resposta = await api.get(`/trilhas/${usuario.id}`);
+
+        // Como o usuário pode ter trilhas de vários cursos,
+        // mostra apenas a do curso atual.
+        const trilhaCurso = resposta.data.filter(
+          (topico) => topico.curso_id === cursoId,
+        );
+
+        setTrilha(trilhaCurso);
+      } catch (error) {
+        console.error("Erro ao carregar trilha:", error);
+      } finally {
+        setCarregando(false);
+      }
+    }
+
+    carregarTrilha();
+  }, [cursoId]);
+
+  if (carregando) {
+    return <p>Carregando trilha...</p>;
+  }
 
   return (
     <>
       <h1>Trilha</h1>
-      <p>Você foi direcionado para a trilha de {titulos[cursoId] || titulos.matematica}.</p>
+
+      <p>
+        Você foi direcionado para a trilha de{" "}
+        {titulos[cursoId] || titulos.matematica}.
+      </p>
 
       {trilha.length > 0 ? (
         <ul>
           {trilha.map((topico, index) => (
-            <li key={`${topico.title}-${index}`} style={{ marginBottom: "1rem" }}>
-              <Link
-                to={`/topico/${index}`}
-                state={{ topico, trilha, cursoId }}
-                style={{ fontWeight: "bold" }}
-              >
-                {topico.title}
-              </Link>
+            <li key={topico.id} style={{ marginBottom: "1rem" }}>
+              <Link to={`/topico/${topico.id}`}>{topico.title}</Link>
+
               <div>
                 {topico.dificuldade} • {topico.duracao_minutos} min
               </div>
@@ -37,7 +70,7 @@ export default function Trilha() {
           ))}
         </ul>
       ) : (
-        <p>Nenhum tópico foi carregado ainda.</p>
+        <p>Você ainda não possui uma trilha para este curso.</p>
       )}
     </>
   );

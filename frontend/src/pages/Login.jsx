@@ -4,7 +4,6 @@ import { useNavigate, Link } from "react-router-dom";
 
 export default function Login() {
   const navigate = useNavigate();
-  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
 
   async function aoEnviar(e) {
@@ -16,12 +15,12 @@ export default function Login() {
         return;
       }
 
-       await api.post("/usuarios/login", {
+       const response = await api.post("/usuarios/login", {
         email,
       });
 
+      localStorage.setItem( "usuario", JSON.stringify(response.data.usuario) );
 
-      setNome("");
       setEmail("");
 
       navigate("/cursos");
@@ -41,7 +40,7 @@ export default function Login() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="Email"
         />
-        <button type="submit">Cadastrar</button>
+        <button type="submit">Entrar</button>
       </form>
       <Link to={"/"}>Ainda não tem conta?</Link>
     </>

@@ -30,6 +30,7 @@ export default function Cursos() {
           <Link to={`/diagnostico?curso=${curso.id}`}>Acessar</Link>
         </div>
       ))}
+      <Link to={`/trilha`}>Acessar seus cursos</Link>
     </>
   );
 }
