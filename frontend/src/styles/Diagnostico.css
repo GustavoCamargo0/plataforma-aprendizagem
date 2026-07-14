@@ -1,0 +1,189 @@
+.diagnostico-container {
+  min-height: 100vh;
+  background: #f3f4f6;
+  padding: 40px 20px;
+}
+
+.diagnostico-card {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+
+  padding: 40px;
+  border-radius: 16px;
+
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+
+.diagnostico-card h1 {
+  font-size: 32px;
+  color: #111827;
+  margin-bottom: 10px;
+}
+
+
+.diagnostico-card h2 {
+  font-size: 22px;
+  color: #2563eb;
+  margin-bottom: 15px;
+}
+
+
+.diagnostico-card p {
+  color: #4b5563;
+  line-height: 1.6;
+  margin-bottom: 30px;
+}
+
+
+/* Perguntas */
+
+.pergunta-container {
+  margin-bottom: 25px;
+}
+
+
+.pergunta-container label {
+  display: block;
+
+  font-weight: 600;
+  color: #1f2937;
+
+  margin-bottom: 8px;
+}
+
+
+.pergunta-container input {
+
+  width: 100%;
+
+  padding: 14px;
+
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+
+  font-size: 16px;
+
+  outline: none;
+
+  transition: 0.2s;
+}
+
+
+.pergunta-container input:focus {
+
+  border-color: #2563eb;
+
+  box-shadow: 0 0 0 3px rgba(37,99,235,0.15);
+
+}
+
+
+
+/* Botão */
+
+.diagnostico-button {
+
+  width: 100%;
+
+  margin-top: 20px;
+
+  padding: 14px;
+
+  border: none;
+
+  border-radius: 10px;
+
+  background: #2563eb;
+
+  color: white;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+}
+
+
+.diagnostico-button:hover {
+
+  background: #1d4ed8;
+
+}
+
+
+.diagnostico-button:disabled {
+
+  background: #93c5fd;
+
+  cursor: not-allowed;
+
+}
+
+.diagnostico-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+
+.voltar-button,
+.diagnostico-button {
+
+  flex: 1;
+  padding: 14px;
+
+  border-radius: 10px;
+  border: none;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+}
+
+
+.voltar-button {
+
+  background: #e5e7eb;
+  color: #374151;
+
+}
+
+
+.voltar-button:hover {
+
+  background: #d1d5db;
+
+}
+
+
+.diagnostico-button {
+
+  background: #2563eb;
+  color: white;
+
+}
+
+
+.diagnostico-button:hover {
+
+  background: #1d4ed8;
+
+}
+
+
+.voltar-button:disabled,
+.diagnostico-button:disabled {
+
+  opacity: 0.6;
+  cursor: not-allowed;
+
+}

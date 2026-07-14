@@ -1,0 +1,367 @@
+.painel-container {
+  min-height: 100vh;
+  padding: 50px;
+  background: #f4f6f8;
+  font-family: Arial, sans-serif;
+}
+
+
+/* Cabeçalho */
+
+.painel-header {
+
+  max-width: 1000px;
+
+  margin: 0 auto 30px;
+
+}
+
+
+.painel-header h1 {
+
+  color: #1f2937;
+
+  margin-bottom: 8px;
+
+}
+
+
+.painel-header p {
+
+  color: #6b7280;
+
+}
+
+
+
+/* Card de progresso */
+
+.progresso-card {
+
+  max-width: 1000px;
+
+  margin: auto;
+
+  background: white;
+
+  padding: 30px;
+
+  border-radius: 16px;
+
+  box-shadow:
+    0 8px 25px rgba(0,0,0,0.08);
+
+}
+
+
+.progresso-card h2 {
+
+  color:#1f2937;
+
+  margin-bottom:20px;
+
+}
+
+
+
+.barra-container {
+
+  width:100%;
+
+  height:18px;
+
+  background:#e5e7eb;
+
+  border-radius:20px;
+
+  overflow:hidden;
+
+}
+
+
+
+.barra-progresso {
+
+  height:100%;
+
+  background:#2563eb;
+
+  border-radius:20px;
+
+  transition:0.4s;
+
+}
+
+
+
+.progresso-info {
+
+  margin-top:15px;
+
+  color:#4b5563;
+
+  font-weight:bold;
+
+}
+
+
+
+/* Seções */
+
+.painel-section {
+
+  max-width:1000px;
+
+  margin:40px auto 0;
+
+}
+
+
+.painel-section h2 {
+
+  color:#1f2937;
+
+  margin-bottom:20px;
+
+}
+
+
+
+/* Lista de tópicos */
+
+
+.trilha-lista {
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:15px;
+
+}
+
+
+
+.trilha-item {
+
+  background:white;
+
+  padding:20px;
+
+  border-radius:12px;
+
+  border-left:5px solid #9ca3af;
+
+  box-shadow:
+  0 5px 15px rgba(0,0,0,0.06);
+
+}
+
+
+
+.trilha-item.concluido {
+
+  border-left-color:#16a34a;
+
+  background:#f0fdf4;
+
+}
+
+
+
+.trilha-item h3 {
+
+  margin:0 0 8px;
+
+  color:#1f2937;
+
+}
+
+
+
+.trilha-item p {
+
+  color:#6b7280;
+
+  margin:0;
+
+}
+
+
+
+/* Histórico */
+
+
+.historico-lista {
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:20px;
+
+}
+
+
+
+.historico-card {
+
+  background:white;
+
+  padding:25px;
+
+  border-radius:14px;
+
+  box-shadow:
+  0 8px 20px rgba(0,0,0,0.07);
+
+}
+
+
+
+.historico-card h3 {
+
+  color:#1f2937;
+
+  margin-bottom:15px;
+
+}
+
+
+
+.historico-card strong {
+
+  color:#374151;
+
+}
+
+
+
+.historico-card p {
+
+  color:#4b5563;
+
+  line-height:1.6;
+
+}
+
+
+
+/* Feedback IA */
+
+
+.feedback-box {
+
+  margin-top:20px;
+
+  padding:20px;
+
+  background:#eff6ff;
+
+  border-left:5px solid #2563eb;
+
+  border-radius:10px;
+
+}
+
+
+
+.feedback-box h4 {
+
+  color:#1d4ed8;
+
+  margin-bottom:10px;
+
+}
+
+
+
+/* Responsividade */
+
+@media(max-width:700px){
+
+  .painel-container{
+
+    padding:25px;
+
+  }
+
+
+  .progresso-card,
+  .painel-section{
+
+    width:100%;
+
+  }
+
+}
+
+.painel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 2rem;
+}
+
+
+.painel-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+
+.botao-sair-curso,
+.botao-sair-conta {
+
+  padding: 12px 20px;
+
+  border-radius: 10px;
+
+  border: none;
+
+  font-size: 15px;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: 0.2s;
+
+}
+
+
+
+.botao-sair-curso {
+
+  background-color: #f59e0b;
+
+  color: white;
+
+}
+
+
+
+.botao-sair-curso:hover {
+
+  background-color: #d97706;
+
+}
+
+
+
+
+.botao-sair-conta {
+
+  background-color: #dc2626;
+
+  color: white;
+
+}
+
+
+
+.botao-sair-conta:hover {
+
+  background-color: #b91c1c;
+
+}

@@ -1,36 +1,83 @@
 import { Link } from "react-router-dom";
+import "../styles/Cursos.css";
 
 export default function Cursos() {
   const cursos = [
     {
       id: "matematica",
       title: "Matemática básica",
-      description: "Conteúdo pronto com leitura, exercícios e avaliação inicial.",
+      description:
+        "Conteúdo personalizado com leitura, exercícios e avaliação inicial.",
     },
     {
       id: "gramatica",
       title: "Gramática e interpretação",
-      description: "Aprenda com textos curtos e perguntas que reforçam a compreensão.",
+      description:
+        "Aprenda conceitos de linguagem com exercícios adaptados ao seu nível.",
     },
     {
       id: "raciocinio",
       title: "Raciocínio lógico",
-      description: "Treine padrões de pensamento e problemas com feedback do tutor IA.",
+      description:
+        "Treine padrões de pensamento e resolva problemas com feedback do tutor IA.",
     },
   ];
 
-  return (
-    <>
-      <h1>Cursos</h1>
 
-      {cursos.map((curso) => (
-        <div key={curso.id}>
-          <h3>{curso.title}</h3>
-          <p>{curso.description}</p>
-          <Link to={`/diagnostico?curso=${curso.id}`}>Acessar</Link>
-        </div>
-      ))}
-      <Link to={`/trilha`}>Acessar seus cursos</Link>
-    </>
+  return (
+    <main className="cursos-container">
+
+      <header className="cursos-header">
+        <h1>Cursos disponíveis</h1>
+
+        <p>
+          Escolha um curso para realizar o diagnóstico e criar sua trilha personalizada.
+        </p>
+      </header>
+
+
+      <section className="cursos-lista">
+
+        {cursos.map((curso) => (
+
+          <article 
+            className="curso-card"
+            key={curso.id}
+          >
+
+            <h3>
+              {curso.title}
+            </h3>
+
+
+            <p>
+              {curso.description}
+            </p>
+
+
+            <Link
+              className="curso-link"
+              to={`/diagnostico?curso=${curso.id}`}
+            >
+              Iniciar diagnóstico
+            </Link>
+
+
+          </article>
+
+        ))}
+
+      </section>
+
+
+      <Link
+        className="trilha-link"
+        to="/trilha"
+      >
+        Ver minhas trilhas
+      </Link>
+
+
+    </main>
   );
 }

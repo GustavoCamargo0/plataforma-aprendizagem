@@ -1,0 +1,112 @@
+.cursos-container {
+  min-height: 100vh;
+  background: #f4f6f8;
+  padding: 3rem 2rem;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+
+.cursos-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+
+.cursos-header h1 {
+  color: #1f2937;
+  font-size: 2.2rem;
+  margin-bottom: 0.5rem;
+}
+
+
+.cursos-header p {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+
+.cursos-lista {
+  max-width: 1000px;
+  margin: 0 auto;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+
+.curso-card {
+  background: white;
+  padding: 1.8rem;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.07);
+
+  display: flex;
+  flex-direction: column;
+
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+
+.curso-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+}
+
+
+.curso-card h3 {
+  color: #1f2937;
+  margin-bottom: 0.8rem;
+}
+
+
+.curso-card p {
+  color: #6b7280;
+  line-height: 1.5;
+
+  flex: 1;
+}
+
+
+.curso-link {
+  margin-top: 1.5rem;
+
+  text-align: center;
+
+  background: #2563eb;
+  color: white;
+
+  padding: 0.8rem;
+  border-radius: 8px;
+
+  text-decoration: none;
+  font-weight: bold;
+
+  transition: background 0.2s;
+}
+
+
+.curso-link:hover {
+  background: #1d4ed8;
+}
+
+
+.trilha-link {
+  display: block;
+
+  max-width: 300px;
+
+  margin: 2.5rem auto 0;
+
+  text-align: center;
+
+  color: #2563eb;
+
+  text-decoration: none;
+  font-weight: bold;
+}
+
+
+.trilha-link:hover {
+  text-decoration: underline;
+}

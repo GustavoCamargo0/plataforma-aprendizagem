@@ -159,8 +159,9 @@ app.post("/usuarios/login", async (req, res) => {
   }
 
   try {
-    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", 
-      [email]);
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [
+      email,
+    ]);
 
     if (result.rows.length === 0) {
       return res.status(401).json({
@@ -185,6 +186,7 @@ app.post("/usuarios/login", async (req, res) => {
     });
   }
 });
+
 app.post("/trilhas", async (req, res) => {
   const { usuarioId, cursoId, respostas } = req.body;
 
@@ -194,23 +196,69 @@ app.post("/trilhas", async (req, res) => {
     });
   }
 
-  const prompt = `
-    Você é um tutor especialista em educação. O aluno quer aprender sobre "${cursoId}".
-    Aqui está a avaliação inicial dele: ${JSON.stringify(respostas)}.
-
-    Gere uma trilha de estudos personalizada com entre 3 e 6 tópicos. Para cada tópico, produza os seguintes campos:
-    - "title": título curto do tópico
-    - "conteudo_ensino": explicação didática e concisa (3-6 parágrafos) do conceito
-    - "pergunta": uma pergunta que avalie o aprendizado do tópico (curta)
-    - "dificuldade": "iniciante" | "intermediario" | "avancado"
-    - "duracao_minutos": estimativa de tempo sugerido para estudo
-
-    Retorne ESTRITAMENTE um array JSON com esses objetos, sem texto adicional, sem markdown e sem comentários.
-  `;
-
   try {
+    // Verifica usuário e curso atual
+    const usuarioResult = await pool.query(
+      `
+      SELECT curso_atual
+      FROM usuarios
+      WHERE id = $1
+      `,
+      [usuarioId],
+    );
+
+    if (usuarioResult.rows.length === 0) {
+      return res.status(404).json({
+        error: "Usuário não encontrado",
+      });
+    }
+
+    const cursoAtual = usuarioResult.rows[0].curso_atual;
+
+    /*
+      Regra:
+      Usuário só pode ter um curso ativo.
+
+      Se ele já possui matemática,
+      não pode iniciar gramática.
+    */
+
+    if (cursoAtual && cursoAtual !== cursoId) {
+      return res.status(400).json({
+        error:
+          "Você já possui um curso ativo. Finalize o curso atual antes de iniciar outro.",
+        cursoAtual,
+      });
+    }
+
+    const prompt = `
+      Você é um tutor especialista em educação.
+
+      O aluno quer aprender sobre "${cursoId}".
+
+      Avaliação inicial:
+      ${JSON.stringify(respostas)}
+
+      Gere uma trilha de estudos personalizada com entre 3 e 6 tópicos.
+
+      Cada tópico deve possuir:
+
+      {
+        "title": "",
+        "conteudo_ensino": "",
+        "pergunta": "",
+        "dificuldade": "iniciante|intermediario|avancado",
+        "duracao_minutos": 0
+      }
+
+      Retorne somente um array JSON.
+      Sem markdown.
+      Sem explicações.
+    `;
+
     let trilha = getFallbackTrilha(cursoId);
 
+    // Só chama IA se tiver chave
     if (process.env.GEMINI_API_KEY) {
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -218,25 +266,46 @@ app.post("/trilhas", async (req, res) => {
       });
 
       const text = response.text || "";
+
       const parsed = parseTrilha(text);
 
-      if (parsed && parsed.length) {
+      if (parsed && parsed.length > 0) {
         trilha = parsed;
       }
     }
 
+    /*
+      Caso seja o mesmo curso:
+      remove a trilha antiga e gera novamente
+    */
+
     await pool.query(
-      `DELETE FROM trilhas
-   WHERE usuario_id = $1
-   AND curso_id = $2`,
+      `
+      DELETE FROM trilhas
+      WHERE usuario_id = $1
+      AND curso_id = $2
+      `,
       [usuarioId, cursoId],
     );
 
+    // Salva nova trilha
     for (const topico of trilha) {
       await pool.query(
-        `INSERT INTO trilhas
-    (usuario_id, curso_id, titulo, conteudo_ensino, pergunta, dificuldade, duracao_minutos)
-    VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+        `
+        INSERT INTO trilhas
+        (
+          usuario_id,
+          curso_id,
+          titulo,
+          conteudo_ensino,
+          pergunta,
+          dificuldade,
+          duracao_minutos
+        )
+
+        VALUES
+        ($1,$2,$3,$4,$5,$6,$7)
+        `,
         [
           usuarioId,
           cursoId,
@@ -248,13 +317,27 @@ app.post("/trilhas", async (req, res) => {
         ],
       );
     }
+
+    // Define o curso ativo do usuário
+    await pool.query(
+      `
+      UPDATE usuarios
+      SET curso_atual = $1
+      WHERE id = $2
+      `,
+      [cursoId, usuarioId],
+    );
+
     return res.json({
       sucesso: true,
       trilha,
     });
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ error: err.message });
+
+    return res.status(500).json({
+      error: err.message,
+    });
   }
 });
 
@@ -265,47 +348,176 @@ app.get("/trilhas/:usuarioId", async (req, res) => {
     const resultado = await pool.query(
       `
       SELECT
-        id,
-        curso_id,
-        titulo AS title,
-        conteudo_ensino,
-        pergunta,
-        dificuldade,
-        duracao_minutos
-      FROM trilhas
+        t.id,
+        t.curso_id,
+        t.titulo AS title,
+        t.conteudo_ensino,
+        t.pergunta,
+        t.dificuldade,
+        t.duracao_minutos,
+
+        COALESCE(r.concluido, FALSE) AS concluido
+
+      FROM trilhas t
+
+      LEFT JOIN respostas r
+        ON r.trilha_id = t.id
+        AND r.usuario_id = t.usuario_id
+
+      WHERE t.usuario_id = $1
+
+      ORDER BY t.id;
+      `,
+      [usuarioId]
+    );
+
+    res.json(resultado.rows);
+
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message
+    });
+  }
+});
+
+app.delete("/trilhas/:usuarioId", async (req, res) => {
+  const { usuarioId } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+      DELETE FROM trilhas
       WHERE usuario_id = $1
-      ORDER BY id
+      RETURNING *
       `,
       [usuarioId],
     );
 
-    res.json(resultado.rows);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    await pool.query(
+      `
+      UPDATE usuarios
+      SET curso_atual = NULL
+      WHERE id = $1
+      `,
+      [usuarioId],
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(404).json({
+        error: "Nenhuma trilha encontrada para esse usuário.",
+      });
+    }
+
+    res.json({
+      sucesso: true,
+      mensagem: "Curso removido com sucesso.",
+    });
+  } catch (error) {
+    console.error("Erro ao remover curso:", error);
+
+    res.status(500).json({
+      error: error.message,
+    });
   }
 });
-
 app.post("/respostas", async (req, res) => {
   const { usuarioId, trilhaId, resposta } = req.body;
 
   try {
-    await pool.query(
+    // 1 - salva a resposta do aluno
+    const respostaSalva = await pool.query(
       `
-      INSERT INTO respostas (usuario_id, trilha_id, resposta)
-      VALUES ($1,$2,$3)
-      ON CONFLICT (usuario_id, trilha_id)
-      DO UPDATE
-      SET resposta = EXCLUDED.resposta,
-          atualizado_em = CURRENT_TIMESTAMP
+      INSERT INTO respostas
+      (usuario_id, trilha_id, resposta, concluido)
+      VALUES ($1, $2, $3, TRUE)
+      RETURNING id
       `,
-      [usuarioId, trilhaId, resposta]
+      [usuarioId, trilhaId, resposta],
     );
 
-    res.json({ sucesso: true });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    const respostaId = respostaSalva.rows[0].id;
+
+    // 2 - busca informações do tópico
+    const topico = await pool.query(
+      `
+      SELECT titulo, pergunta, conteudo_ensino
+      FROM trilhas
+      WHERE id = $1
+      `,
+      [trilhaId],
+    );
+
+    const dadosTopico = topico.rows[0];
+
+    // 3 - manda para a IA avaliar
+
+    const prompt = `
+Você é um professor avaliando a resposta de um aluno.
+
+Analise:
+
+Tópico:
+${dadosTopico.titulo}
+
+Conteúdo:
+${dadosTopico.conteudo_ensino}
+
+Pergunta:
+${dadosTopico.pergunta}
+
+Resposta do aluno:
+${resposta}
+
+
+Retorne o feedback seguindo exatamente este formato:
+
+ACERTO:
+Explique se a resposta está correta ou parcialmente correta.
+
+EXPLICAÇÃO:
+Explique o conceito de forma simples.
+
+MELHORIA:
+Diga o que o aluno pode estudar ou melhorar.
+
+Use frases curtas.
+Não use markdown.
+Não use emojis.
+`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const feedback = response.text;
+
+    // 4 - salva feedback no banco
+
+    await pool.query(
+      `
+      INSERT INTO feedbacks
+      (usuario_id, trilha_id, resposta_id, feedback)
+      VALUES ($1,$2,$3,$4)
+      `,
+      [usuarioId, trilhaId, respostaId, feedback],
+    );
+
+    // 5 - devolve para o frontend
+
+    res.json({
+      sucesso: true,
+      resposta,
+      feedback,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      erro: error.message,
+    });
   }
 });
 
@@ -315,12 +527,14 @@ app.get("/respostas/:usuarioId/:trilhaId", async (req, res) => {
   try {
     const resultado = await pool.query(
       `
-      SELECT resposta
+         SELECT
+        resposta,
+        concluido
       FROM respostas
       WHERE usuario_id = $1
       AND trilha_id = $2
       `,
-      [usuarioId, trilhaId]
+      [usuarioId, trilhaId],
     );
 
     if (resultado.rows.length === 0) {
@@ -351,21 +565,109 @@ app.get("/topicos/:id", async (req, res) => {
       FROM trilhas
       WHERE id = $1
       `,
-      [id]
+      [id],
     );
 
     if (resultado.rows.length === 0) {
       return res.status(404).json({
-        error: "Tópico não encontrado"
+        error: "Tópico não encontrado",
       });
     }
 
     res.json(resultado.rows[0]);
-
   } catch (error) {
     console.error(error);
     res.status(500).json({
-      error: error.message
+      error: error.message,
+    });
+  }
+});
+
+app.get("/painel/:usuarioId", async (req, res) => {
+  const { usuarioId } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+      SELECT
+        t.id,
+        t.curso_id,
+        t.titulo AS title,
+        t.conteudo_ensino,
+        t.pergunta,
+        t.dificuldade,
+        t.duracao_minutos,
+
+        COALESCE(r.concluido, FALSE) AS concluido
+
+      FROM trilhas t
+
+      LEFT JOIN respostas r
+        ON r.trilha_id = t.id
+        AND r.usuario_id = t.usuario_id
+
+      WHERE t.usuario_id = $1
+
+      ORDER BY t.id;
+      `,
+      [usuarioId],
+    );
+
+    const total = resultado.rows.length;
+
+    const concluidos = resultado.rows.filter((item) => item.concluido).length;
+
+    const progresso = total > 0 ? Math.round((concluidos / total) * 100) : 0;
+
+    res.json({
+      progresso,
+      total,
+      concluidos,
+      trilha: resultado.rows,
+    });
+  } catch (error) {
+    console.error(error);
+
+    res.status(500).json({
+      error: error.message,
+    });
+  }
+});
+
+app.get("/historico/:usuarioId", async (req, res) => {
+  const { usuarioId } = req.params;
+
+  try {
+    const resultado = await pool.query(
+      `
+      SELECT
+        r.id,
+        t.titulo AS topico,
+        r.resposta,
+        f.feedback,
+        r.criado_em
+
+      FROM respostas r
+
+      JOIN trilhas t
+        ON t.id = r.trilha_id
+
+      LEFT JOIN feedbacks f
+        ON f.resposta_id = r.id
+
+      WHERE r.usuario_id = $1
+
+      ORDER BY r.criado_em DESC
+      `,
+      [usuarioId],
+    );
+
+    res.json(resultado.rows);
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message,
     });
   }
 });

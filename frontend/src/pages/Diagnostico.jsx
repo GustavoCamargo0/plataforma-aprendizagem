@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import api from "../data/api";
+import "../styles/Diagnostico.css";
 
 const cursos = {
   matematica: {
@@ -20,6 +21,7 @@ const cursos = {
       },
     ],
   },
+
   gramatica: {
     title: "Gramática e interpretação",
     overview:
@@ -37,6 +39,7 @@ const cursos = {
       },
     ],
   },
+
   raciocinio: {
     title: "Raciocínio lógico",
     overview:
@@ -58,74 +61,108 @@ const cursos = {
 
 export default function Diagnostico() {
   const navigate = useNavigate();
+
   const [searchParams] = useSearchParams();
+
   const [tema, setTema] = useState("");
+
   const [respostas, setRespostas] = useState({});
 
+  const [loading, setLoading] = useState(false);
+
   const cursoId = searchParams.get("curso") || "matematica";
+
   const curso = cursos[cursoId] || cursos.matematica;
 
-  const handleRespostaChange = (id, value) => {
-    setRespostas((prev) => ({ ...prev, [id]: value }));
-  };
+  function handleRespostaChange(id, value) {
+    setRespostas((prev) => ({
+      ...prev,
+      [id]: value,
+    }));
+  }
 
   async function aoEnviar(event) {
     event.preventDefault();
 
     try {
-      const usuarioId = localStorage.getItem("usuarioId") || "1";
+      setLoading(true);
+
+      const usuario = JSON.parse(localStorage.getItem("usuario"));
+
+      if (!usuario) {
+        navigate("/login");
+
+        return;
+      }
+
       const payload = {
-        usuarioId,
+        usuarioId: usuario.id,
+
         cursoId,
+
         respostas: {
           tema,
           ...respostas,
         },
       };
 
-      const response = await api.post("/trilhas", payload);
-      const trilha = response.data?.trilha || [];
+      await api.post("/trilhas", payload);
 
-      sessionStorage.setItem("trilha", JSON.stringify(trilha));
-      sessionStorage.setItem("cursoId", cursoId);
-
-      navigate(`/trilha?curso=${cursoId}`, {
-        state: { trilha, cursoId },
-      });
+      navigate(`/trilha?curso=${cursoId}`);
     } catch (error) {
-      console.error("Erro ao enviar respostas:", error);
-      navigate(`/trilha?curso=${cursoId}`, {
-        state: { trilha: [], cursoId },
-      });
+      console.error("Erro ao criar trilha:", error);
+
+      if (error.response?.data?.error) {
+        alert(error.response.data.error);
+      }
+    } finally {
+      setLoading(false);
     }
   }
 
   return (
-    <>
-      <h1>Diagnóstico</h1>
-      <h2>{curso.title}</h2>
-      <p>{curso.overview}</p>
-
-      <form onSubmit={aoEnviar}>
-        {curso.questions.map((question) => (
-          <div key={question.id} style={{ marginTop: "1rem" }}>
-            <label htmlFor={question.id}>{question.label}</label>
-            <input
-              id={question.id}
-              value={respostas[question.id] || ""}
-              onChange={(e) =>
-                handleRespostaChange(question.id, e.target.value)
-              }
-              placeholder={question.placeholder}
-              style={{ display: "block", marginTop: "0.25rem", width: "100%" }}
-            />
-          </div>
-        ))}
-
-        <button type="submit" style={{ marginTop: "1rem" }}>
-          Confirmar
+    <div className="diagnostico-container">
+      <div className="diagnostico-card">
+        <button
+          type="button"
+          className="voltar-button"
+          onClick={() => navigate("/cursos")}
+          disabled={loading}
+        >
+          Voltar para cursos
         </button>
-      </form>
-    </>
+
+        <h1>Diagnóstico inicial</h1>
+
+        <h2>{curso.title}</h2>
+
+        <p>{curso.overview}</p>
+
+        <form onSubmit={aoEnviar}>
+          {curso.questions.map((question) => (
+            <div key={question.id} className="pergunta-container">
+              <label htmlFor={question.id}>{question.label}</label>
+
+              <input
+                id={question.id}
+                value={respostas[question.id] || ""}
+                onChange={(e) =>
+                  handleRespostaChange(question.id, e.target.value)
+                }
+                placeholder={question.placeholder}
+              />
+            </div>
+          ))}
+
+          <button
+            type="submit"
+            className="diagnostico-button"
+            disabled={loading}
+          >
+            {loading ? "Criando trilha personalizada..." : "Criar minha trilha"}
+          </button>
+        </form>
+      </div>
+    </div>
   );
 }

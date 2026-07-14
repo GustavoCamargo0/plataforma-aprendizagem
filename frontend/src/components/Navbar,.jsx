@@ -1,25 +1,46 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+import "../styles/Navbar.css";
 
 export default function Navbar() {
+  const location = useLocation();
+
+  const rotasVisiveis = ["/trilha", "/painel", "/cursos"];
+
+  const mostrarNavbar = rotasVisiveis.some((rota) =>
+    location.pathname.startsWith(rota),
+  );
+
+  if (!mostrarNavbar) {
+    return null;
+  }
+
+  const usuario = JSON.parse(localStorage.getItem("usuario"));
+
   return (
-    <header>
-      <nav>
-        <h1>Plataforma</h1>
+    <nav className="navbar">
+      <div className="navbar-container">
+        <Link to="/cursos" className="navbar-logo">
+          Aprendizagem IA
+        </Link>
 
-        <ul>
-          <li>
-            <Link to="/trilha">Trilha</Link>
-          </li>
+        <div className="navbar-links">
+          <Link to="/cursos">
+            Cursos
+          </Link>
 
-          <li>
-            <Link to="/topico/:id">Topico</Link>
-          </li>
+          {usuario && (
+            <Link to="/trilha">
+              Ver trilha
+            </Link>
+          )}
 
-          <li>
-            <Link to="/painel">Painel</Link>
-          </li>
-        </ul>
-      </nav>
-    </header>
+          {usuario && (
+            <Link to="/painel">
+              Painel
+            </Link>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 }

@@ -7,9 +7,12 @@ import Topico from "./pages/Topico.jsx";
 import Painel from "./pages/Painel.jsx";
 import Cursos from "./pages/Cursos.jsx";
 import Login from "./pages/Login.jsx";
+import Navbar from "./components/Navbar,.jsx";
 
 function App() {
   return (
+    <>
+      <Navbar />
     <Routes>
       <Route path="/" element={<Entrada />} />
       <Route path="/cursos" element={<Cursos />} />
@@ -19,6 +22,7 @@ function App() {
       <Route path="/painel" element={<Painel />} />
       <Route path="/login" element={<Login/>}/>
     </Routes>
+    </>
   );
 }
 

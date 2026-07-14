@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../data/api";
 import { Link, useSearchParams } from "react-router-dom";
+import "../styles/Trilha.css";
 
 export default function Trilha() {
   const [searchParams] = useSearchParams();
@@ -8,7 +9,7 @@ export default function Trilha() {
   const [trilha, setTrilha] = useState([]);
   const [carregando, setCarregando] = useState(true);
 
-  const cursoId = searchParams.get("curso") || "matematica";
+  const cursoId = searchParams.get("curso") || "";
 
   const titulos = {
     matematica: "Matemática básica",
@@ -27,13 +28,7 @@ export default function Trilha() {
 
         const resposta = await api.get(`/trilhas/${usuario.id}`);
 
-        // Como o usuário pode ter trilhas de vários cursos,
-        // mostra apenas a do curso atual.
-        const trilhaCurso = resposta.data.filter(
-          (topico) => topico.curso_id === cursoId,
-        );
-
-        setTrilha(trilhaCurso);
+      setTrilha(resposta.data);
       } catch (error) {
         console.error("Erro ao carregar trilha:", error);
       } finally {
@@ -49,29 +44,53 @@ export default function Trilha() {
   }
 
   return (
-    <>
-      <h1>Trilha</h1>
+    <main className="trilha-container">
+      <header className="trilha-header">
+        <h1>Sua trilha de aprendizagem</h1>
 
-      <p>
-        Você foi direcionado para a trilha de{" "}
-        {titulos[cursoId] || titulos.matematica}.
-      </p>
+        {cursoId && (
+          <p>
+            Curso: <strong>{titulos[cursoId]}</strong>
+          </p>
+        )}
+      </header>
 
       {trilha.length > 0 ? (
-        <ul>
-          {trilha.map((topico, index) => (
-            <li key={topico.id} style={{ marginBottom: "1rem" }}>
-              <Link to={`/topico/${topico.id}`}>{topico.title}</Link>
+        <ul className="trilha-lista">
+          {trilha.map((topico) => (
+            <li className="trilha-item" key={topico.id}>
+              <div className="trilha-topico">
+                <Link
+                  className={`trilha-link ${
+                    topico.concluido ? "concluido" : "pendente"
+                  }`}
+                  to={`/topico/${topico.id}`}
+                >
+                  {topico.title}
+                </Link>
 
-              <div>
-                {topico.dificuldade} • {topico.duracao_minutos} min
+                <span
+                  className={`trilha-status ${
+                    topico.concluido ? "status-concluido" : "status-pendente"
+                  }`}
+                >
+                  {topico.concluido ? "Concluído" : "Pendente"}
+                </span>
+              </div>
+
+              <div className="trilha-info">
+                {topico.dificuldade}
+                {" • "}
+                {topico.duracao_minutos} min
               </div>
             </li>
           ))}
         </ul>
       ) : (
-        <p>Você ainda não possui uma trilha para este curso.</p>
+        <p className="trilha-vazia">
+          Você ainda não possui uma trilha para este curso.
+        </p>
       )}
-    </>
+    </main>
   );
 }
