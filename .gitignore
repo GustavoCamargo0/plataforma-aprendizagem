@@ -22,4 +22,18 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment files and secrets
 .env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.crt
+secrets.*
+credentials.*
